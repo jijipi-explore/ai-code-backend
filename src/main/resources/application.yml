@@ -1,0 +1,25 @@
+# Spring Boot应用配置
+spring:
+  # 应用名称配置
+  application:
+    # 设置应用名称为ai-code-backend
+    name: ai-code-backend
+# 服务器配置
+server:
+  # 设置服务器端口号为8123
+  port: 8123
+  # 设置Servlet上下文路径为/api
+  servlet:
+    context-path: /api
+# SpringDoc和Knife4j的配置文件
+springdoc:
+  # 分组配置
+  group-configs:
+    # 默认分组配置
+    - group: 'default'  # 分组名称
+      packages-to-scan: com.jjp.controller  # 需要扫描的包路径，用于生成API文档
+# Knife4j增强工具配置
+knife4j:
+  enable: true  # 启用Knife4j增强功能
+  setting:
+    language: zh_cn  # 设置Knife4j界面语言为中文
