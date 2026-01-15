@@ -18,7 +18,7 @@ import java.util.Map;
 public class MyBatisFlexCodeGenerator {
 
     // 需要生成的表名
-    private static final String[] TABLE_NAMES = {"user"};
+    private static final String[] TABLE_NAMES = {"user"}; // todo 使用前需要修改表名
 
     public static void main(String[] args) {
         // 获取数据源信息
@@ -50,7 +50,7 @@ public class MyBatisFlexCodeGenerator {
 
         // 设置根包，建议先生成到一个临时目录下，生成代码后，再移动到项目目录下
         globalConfig.getPackageConfig()
-                .setBasePackage("com.jjp.result");
+                .setBasePackage("com.jjp.mybatisfluxresult");
 
         // 设置表前缀和只生成哪些表，setGenerateTable 未配置时，生成所有表
         globalConfig.getStrategyConfig()

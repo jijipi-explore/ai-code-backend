@@ -4,6 +4,10 @@ spring:
   application:
     # 设置应用名称为ai-code-backend
     name: ai-code-backend
+  # 配置文件的环境设置部分
+  profiles:
+    # 指定当前激活的环境
+    active: local
   # 数据源配置
   datasource:
     # JDBC驱动类名，用于连接MySQL数据库
