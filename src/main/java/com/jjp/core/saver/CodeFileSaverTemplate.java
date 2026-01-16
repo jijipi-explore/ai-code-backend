@@ -1,8 +1,8 @@
 package com.jjp.core.saver;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import com.jjp.constant.AppConstant;
 import com.jjp.exception.BusinessException;
 import com.jjp.exception.ErrorCode;
 import com.jjp.model.enums.CodeGenTypeEnum;
@@ -20,18 +20,19 @@ import java.nio.charset.StandardCharsets;
 public abstract class CodeFileSaverTemplate<T> {
 
     // 文件保存根目录，使用系统当前工作目录下的tmp/code_output作为根目录
-    protected static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    protected static final String FILE_SAVE_ROOT_DIR = AppConstant.CODE_OUTPUT_ROOT_DIR;
 
     /**
      * 模板方法，保存代码结果
      * @param result 代码结果
+     * @param appId 应用ID
      * @return 保存后的文件对象
      */
-    public final File saveCode(T result) {
+    public final File saveCode(T result, Long appId) {
         // 1.验证输入
         validateInput(result);
         // 2.构建目录
-        String baseDirPath = buildBaseDirPath();
+        String baseDirPath = buildBaseDirPath(appId);
         // 3.保存文件（由子类实现）
         saveFiles(result, baseDirPath);
         // 4.返回文件对象
@@ -50,11 +51,15 @@ public abstract class CodeFileSaverTemplate<T> {
 
     /**
      * 构建基础目录路径
+     * @param appId 应用ID
      * @return 基础目录路径
      */
-    protected String buildBaseDirPath() {
+    protected String buildBaseDirPath(Long appId) {
+        if (appId == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        }
         String codeType = getCodeGenTypeEnum().getValue();
-        String dirName = StrUtil.format("{}_{}", codeType, IdUtil.getSnowflakeNextIdStr());
+        String dirName = StrUtil.format("{}_{}", codeType, appId);
         String dirPath = FILE_SAVE_ROOT_DIR + File.separator + dirName;
         FileUtil.mkdir(dirPath);
         return dirPath;

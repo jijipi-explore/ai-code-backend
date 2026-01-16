@@ -18,7 +18,7 @@ import java.util.Map;
 public class MyBatisFlexCodeGenerator {
 
     // 需要生成的表名
-    private static final String[] TABLE_NAMES = {"user"}; // todo 使用前需要修改表名
+    private static final String[] TABLE_NAMES = {"chat_history"}; // 使用前需要修改表名
 
     public static void main(String[] args) {
         // 获取数据源信息

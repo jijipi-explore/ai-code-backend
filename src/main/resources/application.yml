@@ -18,6 +18,22 @@ spring:
     username: root
     # 数据库密码
     password: 1234
+  # 数据库配置部分
+  data:
+    # Redis数据库配置
+    redis:
+      # Redis服务器主机地址
+      host: localhost
+      # Redis服务器端口号
+      port: 6379
+      # Redis键的过期时间（秒）
+      ttl: 3600
+      # 数据表
+      database: 0
+  # 会话配置部分
+  session:
+    # 会话超时时间，单位为秒（2592000秒 = 30天）
+    timeout: 2592000
 # 服务器配置
 server:
   # 设置服务器端口号为8123
@@ -25,6 +41,12 @@ server:
   # 设置Servlet上下文路径为/api
   servlet:
     context-path: /api
+    # 会话配置
+    session:
+      # Cookie相关配置
+      cookie:
+        # Cookie的最大存活时间（单位：秒），这里设置为30天（2592000秒 = 30天 * 24小时 * 60分钟 * 60秒）
+        max-age: 2592000
 # SpringDoc和Knife4j的配置文件
 springdoc:
   # 分组配置
@@ -37,3 +59,9 @@ knife4j:
   enable: true  # 启用Knife4j增强功能
   setting:
     language: zh_cn  # 设置Knife4j界面语言为中文
+# MyBatis-Flex 配置项
+mybatis-flex:
+  # MyBatis 配置
+  configuration:
+    # 指定 MyBatis 所使用的日志实现，这里使用标准输出实现
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
