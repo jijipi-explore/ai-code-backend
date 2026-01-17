@@ -104,8 +104,8 @@ public class AppController {
         app.setUserId(loginUser.getId());
         // todo 应用名称暂时为initPrompt前12位
         app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
-        // todo 暂时设置为多文件生成
-        app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
+        // todo 临时设置
+        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
         // 保存至数据库
         boolean saveFlag = appService.save(app);
         ThrowExceptionUtils.throwIf(!saveFlag, ErrorCode.SYSTEM_ERROR);

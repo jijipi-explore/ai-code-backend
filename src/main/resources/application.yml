@@ -63,5 +63,5 @@ knife4j:
 mybatis-flex:
   # MyBatis 配置
   configuration:
-    # 指定 MyBatis 所使用的日志实现，这里使用标准输出实现
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 指定 MyBatis 所使用的日志实现
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

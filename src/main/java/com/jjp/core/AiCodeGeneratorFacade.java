@@ -1,14 +1,21 @@
 package com.jjp.core;
 
+import cn.hutool.json.JSONUtil;
 import com.jjp.ai.AiCodeGeneratorService;
 import com.jjp.ai.AiCodeGeneratorServiceFactory;
 import com.jjp.ai.model.HtmlCodeResult;
 import com.jjp.ai.model.MultiFileCodeResult;
+import com.jjp.ai.model.message.AiResponseMessage;
+import com.jjp.ai.model.message.ToolExecutedMessage;
+import com.jjp.ai.model.message.ToolRequestMessage;
 import com.jjp.core.parser.CodeParserExecutor;
 import com.jjp.core.saver.CodeFileSaverExecutor;
 import com.jjp.exception.BusinessException;
 import com.jjp.exception.ErrorCode;
 import com.jjp.model.enums.CodeGenTypeEnum;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -118,7 +125,7 @@ public class AiCodeGeneratorFacade {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
         // 根据 appId 获取相应的 AI 服务实例
-        AiCodeGeneratorService service = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
+        AiCodeGeneratorService service = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenTypeEnum);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 Flux<String> codeStream = service.generateHtmlCodeStream(userMessage);
@@ -127,6 +134,10 @@ public class AiCodeGeneratorFacade {
             case MULTI_FILE -> {
                 Flux<String> codeStream = service.generateMultiFileCodeStream(userMessage);
                 yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
+            }
+            case VUE_PROJECT -> {
+                TokenStream tokenStream = service.generateVueProjectCodeStream(appId, userMessage);
+                yield processTokenStream(tokenStream);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -241,5 +252,50 @@ public class AiCodeGeneratorFacade {
                 log.error("通用流式代码处理方法保存失败: {}", e.getMessage());
             }
         });
+    }
+
+    /**
+     * 将TokenStream 转为 Flux<String>，并传递工具调用信息
+     * @param tokenStream 输入的TokenStream流
+     * @return 返回一个Flux<String>流，包含AI响应消息、工具请求消息和工具执行消息的JSON字符串
+     */
+    private Flux<String> processTokenStream(TokenStream tokenStream) {
+        return Flux.create(
+                sink -> { // 创建一个Flux sink用于发送事件
+                    tokenStream
+                            .onPartialResponse( // 处理部分响应事件
+                                    (String partialResponse) -> { // 当接收到部分响应时
+                                        AiResponseMessage aiResponseMessage = // 创建AI响应消息对象
+                                                new AiResponseMessage(partialResponse);
+                                        sink.next(JSONUtil.toJsonStr(aiResponseMessage)); // 将消息转为JSON并发送
+                                    })
+                            .onPartialToolExecutionRequest( // 处理部分工具执行请求事件
+                                    (index, toolExecutionRequest) -> { // 当接收到工具执行请求时
+                                        ToolRequestMessage toolRequestMessage = // 创建工具请求消息对象
+                                                new ToolRequestMessage(toolExecutionRequest);
+                                        sink.next(JSONUtil.toJsonStr(toolRequestMessage)); // 将消息转为JSON并发送
+                                    }
+                            )
+                            .onToolExecuted( // 处理工具执行完成事件
+                                    (ToolExecution toolExecution) -> { // 当工具执行完成时
+                                        ToolExecutedMessage toolExecutedMessage = // 创建工具执行完成消息对象
+                                                new ToolExecutedMessage(toolExecution);
+                                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage)); // 将消息转为JSON并发送
+                                    }
+                            )
+                            .onCompleteResponse( // 处理响应完成事件
+                                    (ChatResponse chatResponse) -> { // 当响应完成时
+                                        sink.complete(); // 完成流
+                                    }
+                            )
+                            .onError( // 处理错误事件
+                                    (Throwable error) -> { // 当发生错误时
+                                        log.error(error.getMessage()); // 记录错误日志
+                                        sink.error(error); // 将错误传递给流
+                                    }
+                            )
+                            .start(); // 启动TokenStream处理
+                }
+        );
     }
 }
