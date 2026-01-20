@@ -1,5 +1,6 @@
 package com.jjp.service;
 
+import com.jjp.model.dto.app.AppAddRequest;
 import com.jjp.model.dto.app.AppQueryRequest;
 import com.jjp.model.entity.User;
 import com.jjp.model.vo.AppVO;
@@ -68,4 +69,12 @@ public interface AppService extends IService<App> {
      * @param appUrl 应用url
      */
     void generateAppScreenshotAsync(Long appId, String appUrl);
+
+    /**
+     * 创建新应用的方法
+     * @param appAddRequest 应用添加请求参数
+     * @param loginUser 当前登录用户信息
+     * @return 新创建的应用ID
+     */
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 }

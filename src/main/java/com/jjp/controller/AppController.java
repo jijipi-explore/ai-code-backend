@@ -99,23 +99,10 @@ public class AppController {
     @PostMapping("/add")
     public BaseResponse<Long> addApp(@RequestBody AppAddRequest appAddRequest, HttpServletRequest request) {
         ThrowExceptionUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR);
-        // 参数校验
-        String initPrompt = appAddRequest.getInitPrompt();
-        ThrowExceptionUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始prompt不能为空");
         // 获取当前登录对象
         User loginUser = userService.getLoginUser(request);
-        // 构造应用对象
-        App app = new App();
-        BeanUtil.copyProperties(appAddRequest, app);
-        app.setUserId(loginUser.getId());
-        // todo 应用名称暂时为initPrompt前12位
-        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
-        // todo 临时设置
-        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
-        // 保存至数据库
-        boolean saveFlag = appService.save(app);
-        ThrowExceptionUtils.throwIf(!saveFlag, ErrorCode.SYSTEM_ERROR);
-        return ResultUtils.success(app.getId());
+        Long appId = appService.createApp(appAddRequest, loginUser);
+        return ResultUtils.success(appId);
     }
 
     /**
