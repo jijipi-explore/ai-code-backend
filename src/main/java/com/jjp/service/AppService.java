@@ -61,4 +61,11 @@ public interface AppService extends IService<App> {
      * @return 删除结果
      */
     boolean removeByAppId(Long appId);
+
+    /**
+     * 异步生成应用封面截图并上传cos更新数据库
+     * @param appId 应用id
+     * @param appUrl 应用url
+     */
+    void generateAppScreenshotAsync(Long appId, String appUrl);
 }

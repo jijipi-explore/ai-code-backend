@@ -19,6 +19,7 @@ import com.jjp.model.enums.CodeGenTypeEnum;
 import com.jjp.model.vo.AppVO;
 import com.jjp.model.vo.UserVO;
 import com.jjp.service.ChatHistoryService;
+import com.jjp.service.ScreenshotService;
 import com.jjp.service.UserService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -61,6 +62,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private ScreenshotService screenshotService;
 
     @Override
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
@@ -176,7 +180,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         boolean updateResult = this.updateById(updateApp);
         ThrowExceptionUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 10. 返回可访问的 URL
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 11.异步生成截图并更新应用封面
+        generateAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
     }
 
     @Override
@@ -263,5 +270,20 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 删除应用
         int deleteFlag = this.getMapper().deleteById(appId);
         return deleteFlag > 0;
+    }
+
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appUrl) {
+        // 使用虚拟线程异步执行
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            // 更新应用封面字段
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowExceptionUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
+        });
     }
 }
