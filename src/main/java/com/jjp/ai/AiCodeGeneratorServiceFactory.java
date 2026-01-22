@@ -2,7 +2,7 @@ package com.jjp.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.jjp.ai.tools.FileWriteTool;
+import com.jjp.ai.tools.*;
 import com.jjp.exception.BusinessException;
 import com.jjp.exception.ErrorCode;
 import com.jjp.model.enums.CodeGenTypeEnum;
@@ -47,8 +47,13 @@ public class AiCodeGeneratorServiceFactory {
     @Resource
     private ChatHistoryService chatHistoryService;
 
+    // 流式对话模型
     @Resource
     private StreamingChatModel reasoningStreamingChatModel;
+
+    // 工具管理器
+    @Resource
+    private ToolManager toolManager;
 
     // 使用Caffeine缓存框架创建一个缓存映射
     private final Cache<String, AiCodeGeneratorService> serviceCache = Caffeine.newBuilder()
@@ -153,7 +158,7 @@ public class AiCodeGeneratorServiceFactory {
                     // 设置聊天内存提供者，使用memoryId获取对应的chatMemory
                     .chatMemoryProvider(memoryId -> chatMemory)
                     // 添加文件写入工具
-                    .tools(new FileWriteTool())
+                    .tools(toolManager.getAllTools())
                     // 配置幻觉工具名称策略，当工具不存在时返回错误信息
                     .hallucinatedToolNameStrategy(
                             toolExecutionRequest -> ToolExecutionResultMessage.from(
