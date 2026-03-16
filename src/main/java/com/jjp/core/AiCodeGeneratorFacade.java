@@ -8,6 +8,8 @@ import com.jjp.ai.model.MultiFileCodeResult;
 import com.jjp.ai.model.message.AiResponseMessage;
 import com.jjp.ai.model.message.ToolExecutedMessage;
 import com.jjp.ai.model.message.ToolRequestMessage;
+import com.jjp.constant.AppConstant;
+import com.jjp.core.builder.VueProjectBuilder;
 import com.jjp.core.parser.CodeParserExecutor;
 import com.jjp.core.saver.CodeFileSaverExecutor;
 import com.jjp.exception.BusinessException;
@@ -39,6 +41,9 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory; // 注入AI代码生成服务工厂
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
 //    /**
 //     * 统一入口：根据类型生成并保存代码
@@ -137,7 +142,7 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream tokenStream = service.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(tokenStream);
+                yield processTokenStream(tokenStream, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -259,7 +264,7 @@ public class AiCodeGeneratorFacade {
      * @param tokenStream 输入的TokenStream流
      * @return 返回一个Flux<String>流，包含AI响应消息、工具请求消息和工具执行消息的JSON字符串
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
         return Flux.create(
                 sink -> { // 创建一个Flux sink用于发送事件
                     tokenStream
@@ -285,6 +290,9 @@ public class AiCodeGeneratorFacade {
                             )
                             .onCompleteResponse( // 处理响应完成事件
                                     (ChatResponse chatResponse) -> { // 当响应完成时
+                                        // 执行 Vue 项目构建（同步执行，确保预览时项目已就绪）
+                                        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                                        vueProjectBuilder.buildProject(projectPath);
                                         sink.complete(); // 完成流
                                     }
                             )
